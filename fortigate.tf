@@ -95,15 +95,6 @@ resource "fortios_firewall_address" "LAN-Address" {
 }
 
 
-resource "fortios_router_static" "Default-Route" {
-  dst                 = "0.0.0.0 0.0.0.0"
-  dynamic_gateway     = "enable"
-  device              = "port2"
-  status              = "enable"
-  comment             = "Default Route"
-}
-
-
 
 resource "fortios_firewallservice_group" "Internet-services" {
   color = 5
@@ -131,6 +122,18 @@ resource "fortios_firewallservice_group" "Internet-services" {
 }
 
 
+resource "fortios_router_static" "Default-Route" {
+  dst                 = "0.0.0.0 0.0.0.0"
+  dynamic_gateway     = "enable"
+  device              = "port2"
+  status              = "enable"
+  comment             = "Default Route"
+}
+
+
+
+
+
  resource "fortios_vpn_ipsec_phase1interface" "FG-PanOS-PH1" {
   name        = "FG-to-PanOS"
   type        = "static"
@@ -152,6 +155,8 @@ resource "fortios_vpn_ipsec_phase2interface" "FG-to-PanOS-PH2" {
   dst_addr_type = "subnet"
   dst_subnet    = "30.30.30.0 255.255.255.0"
 }
+
+
 
 
 resource "fortios_firewall_policy" "VPN-Outside" {
@@ -229,6 +234,27 @@ resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT" {
   }
 }
 
+resource "fortios_router_static" "VPN-Route" {
+  dst                 = "30.30.30.0 255.255.255.0"
+  device              = "FG-to-PanOS"
+  status              = "enable"
+  comment             = "Route to VPN Remote LAN"
+}
+
+
+resource "fortios_firewall_address" "Remote-LAN" {
+  allow_routing        = "disable"
+  associated_interface = "FG-to-PanOS"
+  color                = "4"
+  end_ip               = "255.255.255.0"
+  name                 = "Remote LAN VPN"
+  start_ip             = "30.30.30.0"
+  subnet_name          = "30.30.30.0 255.255.255.0"  
+  type                 = "ipmask" 
+  visibility           = "enable" 
+}
+
+
 resource "fortios_firewall_policy" "Internet-rule" {
   name       = "Internet Policy"
   policyid   = 1
@@ -254,24 +280,4 @@ resource "fortios_firewall_policy" "Internet-rule" {
     name = "Internet-services"
   }
   nat = "enable"
-}
-
-resource "fortios_router_static" "VPN-Route" {
-  dst                 = "30.30.30.0 255.255.255.0"
-  device              = "FG-to-PanOS"
-  status              = "enable"
-  comment             = "Route to VPN Remote LAN"
-}
-
-
-resource "fortios_firewall_address" "Remote-LAN" {
-  allow_routing        = "disable"
-  associated_interface = "FG-to-PanOS"
-  color                = "4"
-  end_ip               = "255.255.255.0"
-  name                 = "Remote LAN VPN"
-  start_ip             = "30.30.30.0"
-  subnet_name          = "30.30.30.0 255.255.255.0"  
-  type                 = "ipmask" 
-  visibility           = "enable" 
 }
