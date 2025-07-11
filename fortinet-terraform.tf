@@ -9,7 +9,7 @@ terraform {
 
 provider "fortios" {
   hostname = "192.168.29.215"
-  token    = "m85387nprg7cf71m11kwbm0x7zky0d"
+  token    = "m85387nprg7cf71m11kwbm0x7zky0de"
   insecure = "true" # Only for lab environments
 }
 
