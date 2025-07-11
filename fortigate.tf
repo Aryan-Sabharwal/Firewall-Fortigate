@@ -229,26 +229,6 @@ resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT" {
   }
 }
 
-resource "fortios_router_static" "VPN-Route" {
-  dst                 = "30.30.30.0 255.255.255.0"
-  device              = "FG-to-PanOS"
-  status              = "enable"
-  comment             = "Route to VPN Remote LAN"
-}
-
-
-resource "fortios_firewall_address" "Remote-LAN" {
-  allow_routing        = "disable"
-  associated_interface = "FG-to-PanOS"
-  color                = "4"
-  end_ip               = "255.255.255.0"
-  name                 = "Remote LAN VPN"
-  start_ip             = "30.30.30.0"
-  subnet_name          = "30.30.30.0 255.255.255.0"  
-  type                 = "ipmask" 
-  visibility           = "enable" 
-}
-
 resource "fortios_firewall_policy" "Internet-rule" {
   name       = "Internet Policy"
   policyid   = 1
@@ -274,4 +254,24 @@ resource "fortios_firewall_policy" "Internet-rule" {
     name = "Internet-services"
   }
   nat = "enable"
+}
+
+resource "fortios_router_static" "VPN-Route" {
+  dst                 = "30.30.30.0 255.255.255.0"
+  device              = "FG-to-PanOS"
+  status              = "enable"
+  comment             = "Route to VPN Remote LAN"
+}
+
+
+resource "fortios_firewall_address" "Remote-LAN" {
+  allow_routing        = "disable"
+  associated_interface = "FG-to-PanOS"
+  color                = "4"
+  end_ip               = "255.255.255.0"
+  name                 = "Remote LAN VPN"
+  start_ip             = "30.30.30.0"
+  subnet_name          = "30.30.30.0 255.255.255.0"  
+  type                 = "ipmask" 
+  visibility           = "enable" 
 }
