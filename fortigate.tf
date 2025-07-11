@@ -95,6 +95,15 @@ resource "fortios_firewall_address" "LAN-Address" {
 }
 
 
+resource "fortios_router_static" "Default-Route" {
+  dst                 = "0.0.0.0 0.0.0.0"
+  dynamic_gateway     = "enable"
+  device              = "port2"
+  status              = "enable"
+  comment             = "Default Route"
+}
+
+
 
 resource "fortios_firewallservice_group" "Internet-services" {
   color = 5
@@ -120,46 +129,6 @@ resource "fortios_firewallservice_group" "Internet-services" {
     name = "SSH"
   }
 }
-
-
-resource "fortios_router_static" "Default-Route" {
-  dst                 = "0.0.0.0 0.0.0.0"
-  dynamic_gateway     = "enable"
-  device              = "port2"
-  status              = "enable"
-  comment             = "Default Route"
-}
-
-
-
-resource "fortios_firewall_policy" "Internet-rule" {
-  name       = "Internet Policy"
-  policyid   = 1
-  action     = "accept"
-  logtraffic = "all"
-  logtraffic_start = "enable"
-  schedule   = "always"
-
-  srcaddr {
-    name = "LAN VM-NET-1"
-  }
-  srcintf {
-    name = "port3"
-  }
-  dstaddr {
-    name = "all"
-  }
-  dstintf {
-    name = "port2"  
-  }
-
-  service {
-    name = "Internet-services"
-  }
-  nat = "enable"
-}
-
-
 
 
  resource "fortios_vpn_ipsec_phase1interface" "FG-PanOS-PH1" {
@@ -278,4 +247,31 @@ resource "fortios_firewall_address" "Remote-LAN" {
   subnet_name          = "30.30.30.0 255.255.255.0"  
   type                 = "ipmask" 
   visibility           = "enable" 
+}
+
+resource "fortios_firewall_policy" "Internet-rule" {
+  name       = "Internet Policy"
+  policyid   = 1
+  action     = "accept"
+  logtraffic = "all"
+  logtraffic_start = "enable"
+  schedule   = "always"
+
+  srcaddr {
+    name = "LAN VM-NET-1"
+  }
+  srcintf {
+    name = "port3"
+  }
+  dstaddr {
+    name = "all"
+  }
+  dstintf {
+    name = "port2"  
+  }
+
+  service {
+    name = "Internet-services"
+  }
+  nat = "enable"
 }
