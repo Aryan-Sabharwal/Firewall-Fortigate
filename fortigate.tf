@@ -234,6 +234,18 @@ resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT" {
   }
 }
 
+resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT2" {
+  name      = "D-NAT to Inside 2"
+  color     = "7"
+  arp_reply = "enable"
+  extintf   = "port2"
+  extip     = "192.168.29.217"
+
+  mappedip {
+    range = "10.10.10.20"
+  }
+}
+
 resource "fortios_router_static" "VPN-Route" {
   dst                 = "30.30.30.0 255.255.255.0"
   device              = "FG-to-PanOS"
