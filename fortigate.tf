@@ -8,15 +8,12 @@ terraform {
 }
 
 provider "fortios" {
-  hostname     = "192.168.29.215"
-  token        = "m85387nprg7cf71m11kwbm0x7zky0d"
-  insecure     = "true"
+  hostname = "192.168.29.215"
+  token    = "m85387nprg7cf71m11kwbm0x7zky0d"
+  insecure = "true"
 }
 
-
-
-
-
+# Network Interfaces
 resource "fortios_system_interface" "Management" {
   algorithm    = "L4"
   defaultgw    = "enable"
@@ -35,7 +32,6 @@ resource "fortios_system_interface" "Management" {
     nd_mode = "basic"
   }
 }
-
 
 resource "fortios_system_interface" "Internet-wan" {
   algorithm    = "L4"
@@ -56,7 +52,6 @@ resource "fortios_system_interface" "Internet-wan" {
     nd_mode = "basic"
   }
 }
-
 
 resource "fortios_system_interface" "Inside-LAN" {
   algorithm    = "L4"
@@ -79,9 +74,7 @@ resource "fortios_system_interface" "Inside-LAN" {
   }
 }
 
-
-
-
+# Network Objects
 resource "fortios_firewall_address" "LAN-Address" {
   allow_routing        = "disable"
   associated_interface = "port3"
@@ -94,8 +87,19 @@ resource "fortios_firewall_address" "LAN-Address" {
   visibility           = "enable"
 }
 
+resource "fortios_firewall_address" "Remote-LAN" {
+  allow_routing        = "disable"
+  associated_interface = "FG-to-PanOS"
+  color                = "4"
+  end_ip               = "255.255.255.0"
+  name                 = "Remote LAN VPN"
+  start_ip             = "30.30.30.0"
+  subnet               = "30.30.30.0 255.255.255.0"  
+  type                 = "ipmask" 
+  visibility           = "enable" 
+}
 
-
+# Service Groups
 resource "fortios_firewallservice_group" "Internet-services" {
   color = 5
   name  = "Internet-services"
@@ -121,20 +125,17 @@ resource "fortios_firewallservice_group" "Internet-services" {
   }
 }
 
-
+# Routing
 resource "fortios_router_static" "Default-Route" {
-  dst                 = "0.0.0.0 0.0.0.0"
-  dynamic_gateway     = "enable"
-  device              = "port2"
-  status              = "enable"
-  comment             = "Default Route"
+  dst             = "0.0.0.0 0.0.0.0"
+  dynamic_gateway = "enable"
+  device          = "port2"
+  status          = "enable"
+  comment         = "Default Route"
 }
 
-
-
-
-
- resource "fortios_vpn_ipsec_phase1interface" "FG-PanOS-PH1" {
+# VPN Configuration
+resource "fortios_vpn_ipsec_phase1interface" "FG-PanOS-PH1" {
   name        = "FG-to-PanOS"
   type        = "static"
   remote_gw   = "192.168.29.110"
@@ -143,7 +144,6 @@ resource "fortios_router_static" "Default-Route" {
   psksecret   = "Aryan@15"
   proposal    = "des-sha1"
   wizard_type = "custom"
-
 }
 
 resource "fortios_vpn_ipsec_phase2interface" "FG-to-PanOS-PH2" {
@@ -154,126 +154,30 @@ resource "fortios_vpn_ipsec_phase2interface" "FG-to-PanOS-PH2" {
   src_subnet    = "10.10.10.0 255.255.255.0"
   dst_addr_type = "subnet"
   dst_subnet    = "30.30.30.0 255.255.255.0"
-}
-
-
-
-
-resource "fortios_firewall_policy" "VPN-Outside" {
-  name       = "LAN to VPN"
-  policyid   = 2
-  action     = "accept"
-  logtraffic = "all"
-  logtraffic_start = "enable"
-  schedule   = "always"
-
-  srcaddr {
-    name = "LAN VM-NET-1"
-  }
-  srcintf {
-    name = "port3"
-  }
-  dstaddr {
-    name = "Remote LAN VPN"
-  }
-  dstintf {
-    name = "FG-to-PanOS"  
-  }
   
-  service {
-    name = "ALL_ICMP"
-  }
-  service {
-    name = "RDP"
-  }
-
-  nat = "disable"
-}
-
-resource "fortios_firewall_policy" "VPN-Inside" {
-  name       = "VPN to LAN"
-  policyid   = 3
-  action     = "accept"
-  logtraffic = "all"
-  logtraffic_start = "enable"
-  schedule   = "always"
-
-  srcaddr {
-    name = "Remote LAN VPN"
-  }
-  srcintf {
-    name = "FG-to-PanOS"
-  }
-  dstaddr {
-    name = "LAN VM-NET-1"
-  }
-  dstintf {
-    name = "port3"  
-  }
-  
-  service {
-    name = "ALL_ICMP"
-  }
-  service {
-    name = "RDP"
-  }
-
-  nat = "disable"
-}
-
-
-resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT" {
-  name      = "D-NAT to Inside"
-  color     = "7"
-  arp_reply = "enable"
-  extintf   = "port2"
-  extip     = "192.168.29.216"
-
-  mappedip {
-    range = "10.10.10.10"
-  }
-}
-
-resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT2" {
-  name      = "D-NAT to Inside 2"
-  color     = "7"
-  arp_reply = "enable"
-  extintf   = "port2"
-  extip     = "192.168.29.217"
-
-  mappedip {
-    range = "10.10.10.20"
-  }
+  depends_on = [fortios_vpn_ipsec_phase1interface.FG-PanOS-PH1]
 }
 
 resource "fortios_router_static" "VPN-Route" {
-  dst                 = "30.30.30.0 255.255.255.0"
-  device              = "FG-to-PanOS"
-  status              = "enable"
-  comment             = "Route to VPN Remote LAN"
+  dst     = "30.30.30.0 255.255.255.0"
+  device  = "FG-to-PanOS"
+  status  = "enable"
+  comment = "Route to VPN Remote LAN"
+  
+  depends_on = [
+    fortios_vpn_ipsec_phase1interface.FG-PanOS-PH1,
+    fortios_vpn_ipsec_phase2interface.FG-to-PanOS-PH2
+  ]
 }
 
-
-resource "fortios_firewall_address" "Remote-LAN" {
-  allow_routing        = "disable"
-  associated_interface = "FG-to-PanOS"
-  color                = "4"
-  end_ip               = "255.255.255.0"
-  name                 = "Remote LAN VPN"
-  start_ip             = "30.30.30.0"
-  subnet_name          = "30.30.30.0 255.255.255.0"  
-  type                 = "ipmask" 
-  visibility           = "enable" 
-}
-
-
+# Firewall Policies
 resource "fortios_firewall_policy" "Internet-rule" {
-  name       = "Internet Policy"
-  policyid   = 1
-  action     = "accept"
-  logtraffic = "all"
+  name             = "Internet Policy"
+  policyid         = 1
+  action           = "accept"
+  logtraffic       = "all"
   logtraffic_start = "enable"
-  schedule   = "always"
+  schedule         = "always"
 
   srcaddr {
     name = "LAN VM-NET-1"
@@ -287,9 +191,97 @@ resource "fortios_firewall_policy" "Internet-rule" {
   dstintf {
     name = "port2"  
   }
-
   service {
     name = "Internet-services"
   }
   nat = "enable"
+  
+  depends_on = [
+    fortios_firewall_address.LAN-Address,
+    fortios_firewallservice_group.Internet-services
+  ]
+}
+
+resource "fortios_firewall_vip" "Virtual-IP_for_D-NAT" {
+  name      = "D-NAT to Inside"
+  color     = "7"
+  arp_reply = "enable"
+  extintf   = "port2"
+  extip     = "192.168.29.216"
+
+  mappedip {
+    range = "10.10.10.10"
+  }
+}
+
+resource "fortios_firewall_policy" "VPN-Outside" {
+  name             = "LAN to VPN"
+  policyid         = 2
+  action           = "accept"
+  logtraffic       = "all"
+  logtraffic_start = "enable"
+  schedule         = "always"
+
+  srcaddr {
+    name = "LAN VM-NET-1"
+  }
+  srcintf {
+    name = "port3"
+  }
+  dstaddr {
+    name = "Remote LAN VPN"
+  }
+  dstintf {
+    name = "FG-to-PanOS"  
+  }
+  service {
+    name = "ALL_ICMP"
+  }
+  service {
+    name = "RDP"
+  }
+  nat = "disable"
+  
+  depends_on = [
+    fortios_firewall_address.LAN-Address,
+    fortios_firewall_address.Remote-LAN,
+    fortios_vpn_ipsec_phase1interface.FG-PanOS-PH1,
+    fortios_vpn_ipsec_phase2interface.FG-to-PanOS-PH2
+  ]
+}
+
+resource "fortios_firewall_policy" "VPN-Inside" {
+  name             = "VPN to LAN"
+  policyid         = 3
+  action           = "accept"
+  logtraffic       = "all"
+  logtraffic_start = "enable"
+  schedule         = "always"
+
+  srcaddr {
+    name = "Remote LAN VPN"
+  }
+  srcintf {
+    name = "FG-to-PanOS"
+  }
+  dstaddr {
+    name = "LAN VM-NET-1"
+  }
+  dstintf {
+    name = "port3"  
+  }
+  service {
+    name = "ALL_ICMP"
+  }
+  service {
+    name = "RDP"
+  }
+  nat = "disable"
+  
+  depends_on = [
+    fortios_firewall_address.LAN-Address,
+    fortios_firewall_address.Remote-LAN,
+    fortios_vpn_ipsec_phase1interface.FG-PanOS-PH1,
+    fortios_vpn_ipsec_phase2interface.FG-to-PanOS-PH2
+  ]
 }
